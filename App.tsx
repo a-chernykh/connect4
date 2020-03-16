@@ -53,14 +53,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   gameOverText: {
-    fontSize: 30,
+    fontSize: 25,
     color: 'red',
-    fontWeight: 'bold',
     textAlign: 'center',
   },
   gameField: {
     backgroundColor: 'black',
-    marginTop: 20,
     padding: 10,
   },
   row: {
@@ -83,8 +81,14 @@ const styles = StyleSheet.create({
   player2Cell: {
     backgroundColor: player2Color,
   },
-  gameOver: {
+  yourTurn: {
+    fontSize: 25,
+  },
+  currentTurn: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 10,
   },
 });
 
@@ -206,15 +210,33 @@ class GameField extends Component<{}, GameFieldState> {
       rows.push(<View style={styles.row} key={i}>{cells}</View>);
     }
 
+    let header = null;
+    if (this.state.winner) {
+      header = (<GameOver winner={this.state.winner} />);
+    } else {
+      header = (<CurrentTurn player={this.state.currentPlayer} />);
+    }
+
     return (
       <View>
         <TouchableOpacity onPress={this.resetField} style={styles.resetButton}>
           <Text style={styles.resetButtonText}>New Game</Text>
         </TouchableOpacity>
 
-        <View style={styles.gameField}>{rows}</View>
+        {header}
 
-        {this.state.winner && <GameOver winner={this.state.winner} />}
+        <View style={styles.gameField}>{rows}</View>
+      </View>
+    );
+  }
+}
+
+class CurrentTurn extends Component {
+  render() {
+    return (
+      <View style={styles.currentTurn}>
+         <Text style={styles.yourTurn}>Your turn: </Text>
+         <View style={[styles.cell, getCellStyle(this.props.player)]} />
       </View>
     );
   }
@@ -223,9 +245,8 @@ class GameField extends Component<{}, GameFieldState> {
 class GameOver extends Component {
   render() {
     return (
-      <View style={styles.gameOver}>
-         <Text style={styles.gameOverText}>Game Over</Text>
-         <Text style={styles.gameOverText}>Winner: </Text>
+      <View style={styles.currentTurn}>
+         <Text style={styles.gameOverText}>Game Over. Winner: </Text>
          <View style={[styles.cell, getCellStyle(this.props.winner)]} />
       </View>
     );
