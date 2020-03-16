@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Image, StyleSheet, Text, View, TouchableOpacity, TouchableHighlight } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SafeAreaView from 'react-native-safe-area-view';
-import { Player, CellState, getWinner } from './game';
+import { Player, CellState, getWinner, makeAIMove } from './game';
 // import Sound from 'react-native-sound';
 
 import logo from './assets/connect4-logo.png';
@@ -119,11 +119,6 @@ class Cell extends Component<CellProps> {
 }
 
 class GameField extends Component<{}, GameFieldState> {
-  makeAIMove() {
-    let col = Math.floor(Math.random() * colsCount);
-    this.dropChip(col);
-  }
-
   dropChip = (col : number) => {
     if (this.state.winner) {
       return;
@@ -191,7 +186,8 @@ class GameField extends Component<{}, GameFieldState> {
 
   render() {
     if (this.state.currentPlayer == Player.Player2) {
-      this.makeAIMove();
+      const AICol = makeAIMove(this.state.field, Player.Player2);
+      this.dropChip(AICol);
     }
 
     let rows = [];

@@ -9,9 +9,10 @@ export enum CellState {
   Player2 = 2,
 };
 
+const winningCount = 4;
+
 export function getWinner(field: CellState[][]) : Player {
-  let winningCount = 4,
-      rows = field.length,
+  let rows = field.length,
       cols = field[0].length;
 
   for (let i=0; i < rows; i++) {
@@ -77,4 +78,11 @@ export function getWinner(field: CellState[][]) : Player {
   }
 
   return null;
+}
+
+export function makeAIMove(field: CellState[][], AIPlayer: Player) : number {
+  let rows = field.length,
+      cols = field[0].length;
+  let col = Math.floor(Math.random() * cols);
+  return col;
 }
