@@ -1,66 +1,33 @@
-import React from 'react';
-import { Image, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import React, { Component } from 'react';
+import { Image, StyleSheet, Text, View, TouchableOpacity, TouchableHighlight } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SafeAreaView from 'react-native-safe-area-view';
+import { Player, CellState, getWinner } from './game';
+// import Sound from 'react-native-sound';
 
 import logo from './assets/connect4-logo.png';
 
-const rowsCount : number = 6,
-      colsCount : number = 7;
+const rowsCount = 6,
+      colsCount = 7,
+      player1Color = 'red',
+      player2Color = 'yellow';
 
-function Cell() {
-  return (
-    <View style={styles.cell} />
-  );
+
+type GameFieldState = {
+  field: CellState[][],
+  currentPlayer: Player,
+  winner: Player,
+};
+
+type CellProps = {
+  row: number,
+  col: number,
+  value: CellState,
+  onPress: CellPress,
 }
 
-function Row() {
-  let cells = [];
-  for (let i=0; i < colsCount; i++) {
-    cells.push(<Cell key={i} />);
-  }
-  return (
-    <View style={styles.row}>
-      {cells}
-    </View>
-  );
-}
-
-function GameField() {
-  let rows = [];
-  for (let i=0; i < rowsCount; i++) {
-    rows.push(<Row key={i} />);
-  }
-
-  return (
-    <View style={styles.gameField}>
-      {rows}
-    </View>
-  );
-}
-
-function Logo() {
-  return (
-    <Image source={logo} style={styles.logo} />
-  );
-}
-
-export default function App() {
-  return (
-    <SafeAreaProvider>
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.container}>
-          <Logo />
-
-          <TouchableOpacity onPress={() => alert('Hello, world!')} style={styles.button}>
-            <Text style={styles.buttonText}>Restart</Text>
-          </TouchableOpacity>
-
-          <GameField />
-        </View>
-      </SafeAreaView>
-    </SafeAreaProvider>
-  );
+interface CellPress {
+  (col: number): void,
 }
 
 const styles = StyleSheet.create({
@@ -74,15 +41,22 @@ const styles = StyleSheet.create({
     width: 305,
     height: 96,
   },
-  button: {
+  resetButton: {
     marginTop: 20,
     backgroundColor: "black",
     padding: 16,
     borderRadius: 5,
   },
-  buttonText: {
+  resetButtonText: {
     fontSize: 20,
     color: '#fff',
+    textAlign: 'center',
+  },
+  gameOverText: {
+    fontSize: 30,
+    color: 'red',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   gameField: {
     backgroundColor: 'black',
@@ -98,7 +72,175 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 2,
     borderColor: 'grey',
-    backgroundColor: 'white',
     margin: 2,
   },
+  emptyCell: {
+    backgroundColor: 'white',
+  },
+  player1Cell: {
+    backgroundColor: player1Color,
+  },
+  player2Cell: {
+    backgroundColor: player2Color,
+  },
 });
+
+
+class Cell extends Component<CellProps> {
+  render() {
+    let currentStyle = null;
+
+    switch(this.props.value) {
+      case CellState.Empty:
+        currentStyle = styles.emptyCell;
+        break;
+
+      case CellState.Player1:
+        currentStyle = styles.player1Cell;
+        break;
+
+      case CellState.Player2:
+        currentStyle = styles.player2Cell;
+        break;
+    }
+
+    return (
+      <TouchableHighlight onPress={() => this.props.onPress(this.props.col)}>
+        <View style={[styles.cell, currentStyle]} />
+      </TouchableHighlight>
+    );
+  }
+}
+
+class GameField extends Component<{}, GameFieldState> {
+  makeAIMove() {
+    let col = Math.floor(Math.random() * colsCount);
+    this.dropChip(col);
+  }
+
+  dropChip = (col : number) => {
+    let value: CellState = null;
+
+    if (this.state.currentPlayer == Player.Player1) {
+      value = CellState.Player1;
+    } else {
+      value = CellState.Player2;
+    }
+
+    let row = null;
+
+    for (let i=rowsCount-1; i >= 0; i--) {
+      if (this.state.field[i][col] == CellState.Empty) {
+        row = i;
+        break;
+      }
+    }
+
+    if (row != null) {
+      this.state.field[row][col] = value;
+
+      let newState = {
+        field: this.state.field,
+      };
+
+      if (this.state.currentPlayer == Player.Player1) {
+        newState['currentPlayer'] = Player.Player2;
+      } else {
+        newState['currentPlayer'] = Player.Player1;
+      }
+
+      newState['winner'] = getWinner(this.state.field);
+
+      this.setState(newState);
+    }
+  }
+
+  resetField = () => {
+    for (let i=0; i < rowsCount; i++) {
+      let row = [];
+      for (let j=0; j < colsCount; j++) {
+        row.push(CellState.Empty);
+      }
+      this.state.field[i] = row;
+    }
+    this.setState({
+      field: this.state.field,
+      winner: null,
+    })
+  }
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      field: [[]],
+      currentPlayer: Player.Player1,
+      winner: null,
+    };
+    this.resetField();
+  }
+
+  render() {
+    if (this.state.currentPlayer == Player.Player2) {
+      this.makeAIMove();
+    }
+
+    let rows = [];
+
+    for (let i=0; i < rowsCount; i++) {
+      let cells = [];
+
+      for (let j=0; j < colsCount; j++) {
+        cells.push(<Cell key={j}
+                         row={i}
+                         col={j}
+                         value={this.state.field[i][j]}
+                         onPress={this.dropChip} />);
+      }
+
+      rows.push(<View style={styles.row} key={i}>{cells}</View>);
+    }
+
+    return (
+      <View>
+        <TouchableOpacity onPress={this.resetField} style={styles.resetButton}>
+          <Text style={styles.resetButtonText}>New Game</Text>
+        </TouchableOpacity>
+
+        <View style={styles.gameField}>{rows}</View>
+
+        {this.state.winner == null && <View>
+          <Text style={styles.gameOverText}>Game Over</Text>
+          <Text style={styles.gameOverText}>Winner: {this.state.winner == Player.Player1 ? 'Player 1' : 'Player 2'}</Text>
+        </View>}
+      </View>
+    );
+  }
+}
+
+function Logo() {
+  return (
+    <Image source={logo} style={styles.logo} />
+  );
+}
+
+class App extends Component {
+  constructor(props) {
+    super(props);
+    // Sound.setCategory('Playback');
+  }
+
+  render() {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.container}>
+            <Logo />
+            <GameField />
+          </View>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+}
+
+export default App;
