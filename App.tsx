@@ -83,26 +83,28 @@ const styles = StyleSheet.create({
   player2Cell: {
     backgroundColor: player2Color,
   },
+  gameOver: {
+    alignItems: 'center',
+  },
 });
+
+function getCellStyle(cellState : CellState) {
+  switch(cellState) {
+    case CellState.Empty:
+      return styles.emptyCell;
+
+    case CellState.Player1:
+      return styles.player1Cell;
+
+    case CellState.Player2:
+      return styles.player2Cell;
+  }
+}
 
 
 class Cell extends Component<CellProps> {
   render() {
-    let currentStyle = null;
-
-    switch(this.props.value) {
-      case CellState.Empty:
-        currentStyle = styles.emptyCell;
-        break;
-
-      case CellState.Player1:
-        currentStyle = styles.player1Cell;
-        break;
-
-      case CellState.Player2:
-        currentStyle = styles.player2Cell;
-        break;
-    }
+    let currentStyle = getCellStyle(this.props.value);
 
     return (
       <TouchableHighlight onPress={() => this.props.onPress(this.props.col)}>
@@ -119,6 +121,10 @@ class GameField extends Component<{}, GameFieldState> {
   }
 
   dropChip = (col : number) => {
+    if (this.state.winner) {
+      return;
+    }
+
     let value: CellState = null;
 
     if (this.state.currentPlayer == Player.Player1) {
@@ -208,10 +214,19 @@ class GameField extends Component<{}, GameFieldState> {
 
         <View style={styles.gameField}>{rows}</View>
 
-        {this.state.winner == null && <View>
-          <Text style={styles.gameOverText}>Game Over</Text>
-          <Text style={styles.gameOverText}>Winner: {this.state.winner == Player.Player1 ? 'Player 1' : 'Player 2'}</Text>
-        </View>}
+        {this.state.winner && <GameOver winner={this.state.winner} />}
+      </View>
+    );
+  }
+}
+
+class GameOver extends Component {
+  render() {
+    return (
+      <View style={styles.gameOver}>
+         <Text style={styles.gameOverText}>Game Over</Text>
+         <Text style={styles.gameOverText}>Winner: </Text>
+         <View style={[styles.cell, getCellStyle(this.props.winner)]} />
       </View>
     );
   }
