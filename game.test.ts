@@ -1,7 +1,8 @@
 import { getWinner, makeAIMove, Player, CellState } from './game';
 
 const E = CellState.Empty,
-      P1 = CellState.Player1;
+      P1 = CellState.Player1,
+      P2 = CellState.Player2;
 
 describe('getWinner()', () => {
   test('returns null on empty field', () => {
@@ -79,6 +80,45 @@ describe('getWinner()', () => {
 });
 
 describe('makeAIMove()', () => {
+  xtest('stays consistent', () => {
+    let winningField: CellState[][] = [
+      [ E, E,  E, E ],
+      [ E, E,  E, E ],
+      [ E, P1, E, E ],
+      [ E, P1, E, E ],
+    ];
+
+    for(let i=0; i < 3; i++) {
+      expect(makeAIMove(winningField, P1)).toBe(1);
+    }
+  });
+
+  test('prevents opponent from winning', () => {
+    let winningField: CellState[][] = [
+      [ E, E,  E,  E ],
+      [ E, E,  P2, E ],
+      [ E, P1, P2, E ],
+      [ E, P1, P2, E ],
+    ];
+
+    for(let i=0; i < 3; i++) {
+      expect(makeAIMove(winningField, P1)).toBe(2);
+    }
+  });
+
+  xtest('prevents opponent from building winning combination', () => {
+    let winningField: CellState[][] = [
+      [ E,  E, E,  E,  E, E ],
+      [ E,  E, E,  E,  E, E ],
+      [ P1, E, E,  E,  E, E ],
+      [ P1, E, P2, P2, E, E ],
+    ];
+
+    for(let i=0; i < 3; i++) {
+      expect(makeAIMove(winningField, P1)).toBe(1);
+    }
+  });
+
   test('finish up the game on winning combination', () => {
     let winningField: CellState[][] = [
       [ E, E,  E, E ],

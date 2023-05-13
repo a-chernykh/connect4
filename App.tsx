@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Image, StyleSheet, Text, View, TouchableOpacity, TouchableHighlight } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SafeAreaView from 'react-native-safe-area-view';
-import { Player, CellState, getWinner, makeAIMove } from './game';
+import { Player, CellState, getWinner, makeAIMove, getFreeRow } from './game';
 // import Sound from 'react-native-sound';
 
 import logo from './assets/connect4-logo.png';
@@ -119,27 +119,21 @@ class Cell extends Component<CellProps> {
 }
 
 class GameField extends Component<{}, GameFieldState> {
-  dropChip = (col : number) => {
+  makeMove = (col : number) => {
     if (this.state.winner) {
       return;
     }
 
-    let value: CellState = null;
+    let value: CellState = null,
+        player = this.state.currentPlayer;
 
-    if (this.state.currentPlayer == Player.Player1) {
+    if (player == Player.Player1) {
       value = CellState.Player1;
     } else {
       value = CellState.Player2;
     }
 
-    let row = null;
-
-    for (let i=rowsCount-1; i >= 0; i--) {
-      if (this.state.field[i][col] == CellState.Empty) {
-        row = i;
-        break;
-      }
-    }
+    let row = getFreeRow(this.state.field, col);
 
     if (row != null) {
       this.state.field[row][col] = value;
@@ -148,13 +142,13 @@ class GameField extends Component<{}, GameFieldState> {
         field: this.state.field,
       };
 
+      newState['winner'] = getWinner(this.state.field);
+
       if (this.state.currentPlayer == Player.Player1) {
         newState['currentPlayer'] = Player.Player2;
       } else {
         newState['currentPlayer'] = Player.Player1;
       }
-
-      newState['winner'] = getWinner(this.state.field);
 
       this.setState(newState);
     }
@@ -186,8 +180,8 @@ class GameField extends Component<{}, GameFieldState> {
 
   render() {
     if (this.state.currentPlayer == Player.Player2) {
-      const AICol = makeAIMove(this.state.field, Player.Player2);
-      this.dropChip(AICol);
+      const AICol = makeAIMove(this.state.field);
+      this.makeMove(AICol);
     }
 
     let rows = [];
@@ -200,7 +194,7 @@ class GameField extends Component<{}, GameFieldState> {
                          row={i}
                          col={j}
                          value={this.state.field[i][j]}
-                         onPress={this.dropChip} />);
+                         onPress={this.makeMove} />);
       }
 
       rows.push(<View style={styles.row} key={i}>{cells}</View>);
